@@ -32,6 +32,7 @@ struct xTransApp: App {
         _settings = State(initialValue: settings)
         _store = State(initialValue: store)
         MenuBarController.shared.configure(store: store, settings: settings)
+        ClipboardWatcher.shared.configure(store: store, settings: settings)
     }
 
     var body: some Scene {
@@ -76,6 +77,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         MenuBarController.shared.start()
+        ClipboardWatcher.shared.start()
     }
 
     /// Đóng cửa sổ chính không thoát app — app ẩn vào menu bar.

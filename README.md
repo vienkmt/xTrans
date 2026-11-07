@@ -21,7 +21,8 @@
 - **Dịch hai chiều tự động** — gửi ngôn ngữ 1 ra ngôn ngữ 2 và ngược lại, không cần chọn hướng.
 - **Hiểu ngữ cảnh cuộc trao đổi** — các lượt gần nhất được gửi kèm để AI giữ nhất quán xưng hô, tên hàng, mã sản phẩm, giá… Thêm *ghi chú bối cảnh* (vd: "đang đàm phán với nhà cung cấp ở Thâm Quyến"). Bấm ↺ để bắt đầu cuộc trao đổi mới.
 - **Gọi thẳng OpenAI** — nhiều tài khoản / API key, chọn model, nhiệt độ, system prompt riêng cho từng hội thoại.
-- **Thao tác nhanh** — ⌘V khi ô soạn trống là dán & dịch ngay; nút *Dán & dịch*; bấm vào bản dịch là sao chép.
+- **Thao tác nhanh** — ⌘V khi ô soạn trống là dán & dịch ngay; nút *Dán & dịch*. Bản dịch **tự vào clipboard**, sang app chat chỉ cần ⌘V.
+- **Copy là dịch (WeChat)** — bôi đen rồi ⌘C trong WeChat, xTrans tự dịch và hiện bản dịch mà không giành focus. Copy câu trả lời tiếng Việt thì bản dịch tự vào clipboard. Chọn thêm app khác trong Cài đặt; mật khẩu luôn bị bỏ qua.
 - **Khung dịch nhanh trên menu bar** — icon luôn ở góc phải; bấm để mở khung chat gọn ở góc màn hình, vẫn nổi khi bạn chuyển sang app khác để copy qua lại.
 - **Đóng cửa sổ không thoát app** — xTrans ẩn vào menu bar, mở lại bất cứ lúc nào.
 - Giao diện co giãn theo cửa sổ, chế độ sáng / tối, 3 kiểu hình nền.
@@ -61,13 +62,15 @@
 ### Icon trên menu bar
 
 - **Bấm trái:** mở / đóng khung dịch nhanh ở góc trên bên phải màn hình.
-- **Bấm phải:** Mở cửa sổ lớn · Ẩn cửa sổ · Cài đặt · Thoát.
+- **Bấm phải:** Mở cửa sổ lớn · Ẩn cửa sổ · Tự dịch khi copy (bật/tắt) · Cài đặt · Thoát.
+- Icon chuyển **màu xanh** khi đang bật *Copy là dịch*.
 - Dùng Hidden Bar / Bartender mà không thấy icon? Mở rộng vùng ẩn rồi giữ **⌘** kéo icon xTrans ra vùng luôn hiện — vị trí sẽ được nhớ.
 
 ## Bảo mật & dữ liệu
 
 - **API key** được lưu trong **Keychain của macOS** — không ghi ra file, database hay log, không đồng bộ iCloud.
 - **Lịch sử, cấu hình** lưu cục bộ bằng SwiftData trong thư mục sandbox của app (`~/Library/Containers/com.nan.xTrans/`).
+- *Copy là dịch* chỉ đọc clipboard khi bạn copy trong app đã chọn (mặc định WeChat), bỏ qua nội dung được trình quản lý mật khẩu đánh dấu bí mật. Có thể tắt trong Cài đặt hoặc menu icon.
 - Nội dung bạn dịch chỉ được gửi tới **OpenAI** (hoặc Base URL bạn tự cấu hình). App không có máy chủ trung gian, không thu thập dữ liệu.
 - App chạy trong **App Sandbox**, chỉ xin quyền kết nối mạng ra ngoài.
 

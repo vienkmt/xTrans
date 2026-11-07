@@ -25,6 +25,20 @@ struct ChatView: View {
                 onRetry: { store.retry(messageID: $0, in: conversation.id) }
             )
             .background(XTheme.wallpaper)
+            .overlay(alignment: .bottom) {
+                if store.autoCopyNotice == conversation.id {
+                    Label("Đã chép bản dịch · ⌘V để dán", systemImage: "checkmark.circle.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Capsule().fill(XTheme.accent))
+                        .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+                        .padding(.bottom, 10)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(.easeOut(duration: 0.2), value: store.autoCopyNotice)
             .overlay {
                 if conversation.messages.isEmpty && !store.isTranslating(conversation.id) {
                     VStack(spacing: 8) {

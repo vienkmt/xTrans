@@ -117,6 +117,7 @@ final class MenuBarController: NSObject {
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
         statusItem = item
+        refreshStatusIcon()
     }
 
     @objc private func statusItemClicked(_ sender: NSStatusBarButton) {
@@ -140,7 +141,24 @@ final class MenuBarController: NSObject {
         }
     }
 
-    private func showPanel() {
+    /// Có bản dịch mới từ clipboard: hiện khung dịch nhanh nhưng KHÔNG giành focus khỏi app đang dùng (WeChat).
+    func revealForIncoming(conversation: UUID) {
+        if NSApp.isActive, mainWindows.contains(where: \.isKeyWindow) { return } // đang xem ở cửa sổ lớn
+        if panel?.isVisible == true { return }
+        showPanel(activate: false)
+    }
+
+    /// Icon menu bar tô màu xanh khi đang tự dịch clipboard.
+    func refreshStatusIcon() {
+        guard let button = statusItem?.button else { return }
+        let watching = settings?.clipboardWatchEnabled == true
+        button.contentTintColor = watching ? NSColor(srgbRed: 0x4A/255, green: 0x90/255, blue: 0xD9/255, alpha: 1) : nil
+        button.toolTip = watching
+            ? "xTrans — đang tự dịch khi copy trong WeChat · bấm để mở"
+            : "xTrans — bấm để mở"
+    }
+
+    private func showPanel(activate: Bool = true) {
         guard let panel = makePanel() else { return }
         // Neo góc trên bên phải của màn hình đang chứa icon, ngay dưới menu bar
         let screen = statusItem?.button?.window?.screen ?? NSScreen.main ?? NSScreen.screens[0]
@@ -152,9 +170,13 @@ final class MenuBarController: NSObject {
         let origin = CGPoint(x: visible.maxX - size.width - 8, y: visible.maxY - size.height - 6)
         panel.setFrame(CGRect(origin: origin, size: size), display: true)
 
-        NSApp.activate()
         panel.alphaValue = 0
-        panel.makeKeyAndOrderFront(nil)
+        if activate {
+            NSApp.activate()
+            panel.makeKeyAndOrderFront(nil)
+        } else {
+            panel.orderFrontRegardless()
+        }
         NSAnimationContext.runAnimationGroup { $0.duration = 0.15; panel.animator().alphaValue = 1 }
         startDismissMonitors()
     }
@@ -223,6 +245,12 @@ final class MenuBarController: NSObject {
             hide.target = self
             menu.addItem(hide)
         }
+        let watch = NSMenuItem(title: "Tự dịch khi copy (\(watchAppsLabel))", action: #selector(menuToggleWatch), keyEquivalent: "")
+        watch.image = NSImage(systemSymbolName: "doc.on.clipboard", accessibilityDescription: nil)
+        watch.state = settings?.clipboardWatchEnabled == true ? .on : .off
+        watch.target = self
+        menu.addItem(watch)
+        menu.addItem(.separator())
         let prefs = NSMenuItem(title: "Cài đặt…", action: #selector(menuSettings), keyEquivalent: ",")
         prefs.image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: nil)
         prefs.target = self
@@ -241,6 +269,13 @@ final class MenuBarController: NSObject {
     @objc private func menuOpen() { showMainWindow() }
     @objc private func menuHide() { closeMainWindows() }
     @objc private func menuSettings() { openSettings() }
+    @objc private func menuToggleWatch() { settings?.clipboardWatchEnabled.toggle() }
+
+    /// "WeChat", "WeChat, Chrome"…
+    private var watchAppsLabel: String {
+        let names = (settings?.clipboardWatchApps ?? []).map(AppInfo.name(for:))
+        return names.isEmpty ? "chưa chọn app" : names.joined(separator: ", ")
+    }
     @objc private func menuQuit() { NSApp.terminate(nil) }
 }
 

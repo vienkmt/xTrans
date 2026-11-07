@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 /// Cửa sổ Cài đặt (⌘,).
 struct SettingsView: View {
@@ -220,6 +221,15 @@ private struct AccountDetailView: View {
 struct GeneralSettingsView: View {
     @Environment(SettingsStore.self) private var settings
 
+    /// App đang mở (có giao diện) chưa nằm trong danh sách theo dõi.
+    private var addableApps: [NSRunningApplication] {
+        NSWorkspace.shared.runningApplications
+            .filter { $0.activationPolicy == .regular }
+            .filter { $0.bundleIdentifier != nil && $0.bundleIdentifier != Bundle.main.bundleIdentifier }
+            .filter { !settings.clipboardWatchApps.contains($0.bundleIdentifier!) }
+            .sorted { ($0.localizedName ?? "") < ($1.localizedName ?? "") }
+    }
+
     var body: some View {
         @Bindable var settings = settings
 
@@ -252,6 +262,50 @@ struct GeneralSettingsView: View {
                 Text("Hiển thị & khởi động")
             } footer: {
                 Text("Icon xTrans luôn có ở góc phải menu bar — bấm để mở khung chat nhỏ, chuột phải để mở cửa sổ lớn hoặc thoát. Đóng cửa sổ lớn thì app không thoát mà chỉ còn icon đó.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Toggle("Tự dịch khi copy chữ trong các app dưới đây", isOn: $settings.clipboardWatchEnabled)
+                ForEach(settings.clipboardWatchApps, id: \.self) { bundleID in
+                    HStack(spacing: 8) {
+                        Image(nsImage: AppInfo.icon(for: bundleID))
+                            .resizable()
+                            .frame(width: 20, height: 20)
+                        Text(AppInfo.name(for: bundleID))
+                        Spacer()
+                        Button {
+                            settings.clipboardWatchApps.removeAll { $0 == bundleID }
+                        } label: {
+                            Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.borderless)
+                        .help("Bỏ app này")
+                    }
+                    .disabled(!settings.clipboardWatchEnabled)
+                }
+                Menu {
+                    ForEach(addableApps, id: \.bundleIdentifier) { app in
+                        Button {
+                            if let id = app.bundleIdentifier { settings.clipboardWatchApps.append(id) }
+                        } label: {
+                            Label {
+                                Text(app.localizedName ?? app.bundleIdentifier ?? "")
+                            } icon: {
+                                Image(nsImage: app.icon ?? NSImage())
+                            }
+                        }
+                    }
+                } label: {
+                    Label("Thêm app đang mở…", systemImage: "plus")
+                }
+                .disabled(!settings.clipboardWatchEnabled)
+                Toggle("Tự chép bản dịch vào clipboard", isOn: $settings.autoCopyReplies)
+            } header: {
+                Text("Copy là dịch")
+            } footer: {
+                Text("Copy (⌘C) chữ trong app đã chọn → xTrans tự dịch và hiện khung dịch nhanh, không cần dán. Mọi bản dịch gửi từ xTrans (Enter, Dán & dịch, ⌘V) tự vào clipboard, sang app chat chỉ cần ⌘V. Với chữ copy từ app đã chọn, chỉ câu trả lời bằng tiếng Việt mới được tự chép. Mật khẩu (1Password, Bitwarden…) và nội dung copy ở app khác luôn bị bỏ qua.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

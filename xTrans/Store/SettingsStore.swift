@@ -32,6 +32,23 @@ final class SettingsStore {
         didSet { defaults.set(chatWallpaper.rawValue, forKey: Keys.chatWallpaper) }
     }
     /// Khi mở app (vd: cùng máy) chỉ hiện icon trên menu bar, không bật cửa sổ.
+    /// Tự dịch khi copy chữ trong các app được chọn.
+    var clipboardWatchEnabled: Bool {
+        didSet {
+            defaults.set(clipboardWatchEnabled, forKey: "clipboardWatchEnabled")
+            MenuBarController.shared.refreshStatusIcon()
+        }
+    }
+    /// Bundle ID các app được theo dõi (mặc định WeChat).
+    var clipboardWatchApps: [String] {
+        didSet { defaults.set(clipboardWatchApps, forKey: "clipboardWatchApps") }
+    }
+    /// Tự chép bản dịch vào clipboard: mọi lần gửi từ xTrans, và câu trả lời copy từ app được theo dõi.
+    var autoCopyReplies: Bool {
+        didSet { defaults.set(autoCopyReplies, forKey: "autoCopyReplies") }
+    }
+    static let defaultWatchApps = ["com.tencent.xinWeChat"]
+
     var startInMenuBar: Bool {
         didSet { defaults.set(startInMenuBar, forKey: Self.startInMenuBarKey) }
     }
@@ -69,6 +86,9 @@ final class SettingsStore {
         clickToCopyTranslation = defaults.object(forKey: Keys.clickToCopy) as? Bool ?? true
         chatWallpaper = defaults.string(forKey: Keys.chatWallpaper).flatMap(ChatWallpaper.init(rawValue:)) ?? .white
         startInMenuBar = defaults.bool(forKey: Self.startInMenuBarKey)
+        clipboardWatchEnabled = defaults.object(forKey: "clipboardWatchEnabled") as? Bool ?? true
+        clipboardWatchApps = defaults.stringArray(forKey: "clipboardWatchApps") ?? Self.defaultWatchApps
+        autoCopyReplies = defaults.object(forKey: "autoCopyReplies") as? Bool ?? true
     }
 
     var defaultAccount: AIAccount? {

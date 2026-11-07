@@ -11,6 +11,9 @@ final class ChatStore {
     var pendingCounts: [Conversation.ID: Int] = [:]
     /// Nội dung đang soạn của từng hội thoại.
     var drafts: [Conversation.ID: String] = [:]
+    /// Hội thoại vừa có bản dịch được tự chép vào clipboard (hiện thông báo vài giây).
+    var autoCopyNotice: Conversation.ID?
+    private var autoCopyNoticeTask: Task<Void, Never>?
     /// Modal cài đặt hội thoại đang mở (thêm mới hoặc sửa).
     var editor: ConversationEditorMode?
 
@@ -165,15 +168,42 @@ final class ChatStore {
         send(text: text, in: id)
     }
 
+    /// Nguồn của một lần dịch.
+    enum SendOrigin {
+        /// Gửi từ trong xTrans: Enter, "Dán & dịch", ⌘V → luôn tự chép bản dịch
+        case app
+        /// Copy trong app được theo dõi (WeChat) → chỉ tự chép khi là câu trả lời
+        case clipboardWatch
+    }
+
     /// Gửi thẳng một đoạn văn bản (vd: dán từ clipboard), không qua ô soạn.
-    func send(text rawText: String, in id: Conversation.ID) {
+    func send(text rawText: String, in id: Conversation.ID, origin: SendOrigin = .app) {
         let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, let i = index(of: id) else { return }
 
         let outgoing = Message(text: text, isOutgoing: true, status: .sending)
         conversations[i].messages.append(outgoing)
         persistence?.appendMessage(outgoing, to: id)
-        translate(messageID: outgoing.id, text: text, in: id)
+        translate(messageID: outgoing.id, text: text, in: id, origin: origin)
+    }
+
+    /// Chữ vừa copy trong app được theo dõi (vd WeChat): chọn hội thoại có ngôn ngữ khớp rồi gửi dịch.
+    /// Ưu tiên hội thoại đang mở. Trả về id hội thoại, hoặc nil nếu không cặp nào khớp.
+    func receiveClipboardText(_ text: String) -> Conversation.ID? {
+        let candidates = Array(Set(conversations.flatMap { [$0.sourceLang, $0.targetLang] }))
+        guard let lang = Language.detect(text, among: candidates) else { return nil }
+
+        let conv: Conversation?
+        if let current = selectedConversation, current.sourceLang == lang || current.targetLang == lang {
+            conv = current
+        } else {
+            conv = sortedConversations.first { $0.sourceLang == lang }
+                ?? sortedConversations.first { $0.targetLang == lang }
+        }
+        guard let conv else { return nil }
+        select(conv.id)
+        send(text: text, in: conv.id, origin: .clipboardWatch)
+        return conv.id
     }
 
     /// Gửi lại một câu gốc bị lỗi.
@@ -185,12 +215,12 @@ final class ChatStore {
             $0.status = .sending
             $0.errorText = nil
         }
-        translate(messageID: messageID, text: text, in: convID)
+        translate(messageID: messageID, text: text, in: convID, origin: .app)
     }
 
     // MARK: - Private
 
-    private func translate(messageID: Message.ID, text: String, in convID: Conversation.ID) {
+    private func translate(messageID: Message.ID, text: String, in convID: Conversation.ID, origin: SendOrigin) {
         guard let i = index(of: convID) else { return }
         let config = conversations[i].aiConfig
 
@@ -200,6 +230,12 @@ final class ChatStore {
         }
 
         let history = contextHistory(in: conversations[i], before: messageID)
+        // Tự chép bản dịch:
+        // - gửi từ trong xTrans → luôn chép (không cần bấm vào bản dịch nữa)
+        // - copy từ WeChat → chỉ chép khi là câu trả lời (viết bằng ngôn ngữ của bạn), tin đến chỉ cần đọc
+        let isReply = Language.detect(text, among: [conversations[i].sourceLang, conversations[i].targetLang])
+            == conversations[i].targetLang
+        let shouldCopy = origin == .app || isReply
 
         pendingCounts[convID, default: 0] += 1
         Task {
@@ -207,6 +243,10 @@ final class ChatStore {
                 let result = try await service.translate(text: text, config: config, account: account, history: history)
                 updateMessage(messageID, in: convID) { $0.status = .sent }
                 appendIncoming(result, model: config.model, replyTo: messageID, to: convID)
+                if shouldCopy && settings.autoCopyReplies {
+                    Clipboard.write(result) // sang WeChat chỉ cần ⌘V
+                    showAutoCopyNotice(for: convID)
+                }
             } catch {
                 fail(messageID, in: convID, reason: error.localizedDescription)
             }
@@ -239,6 +279,16 @@ final class ChatStore {
             picked.insert(turn, at: 0)
         }
         return picked
+    }
+
+    private func showAutoCopyNotice(for convID: Conversation.ID) {
+        autoCopyNotice = convID
+        autoCopyNoticeTask?.cancel()
+        autoCopyNoticeTask = Task {
+            try? await Task.sleep(for: .seconds(2.5))
+            guard !Task.isCancelled else { return }
+            autoCopyNotice = nil
+        }
     }
 
     private func fail(_ messageID: Message.ID, in convID: Conversation.ID, reason: String) {
