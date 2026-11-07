@@ -1,0 +1,5 @@
+# Bản đóng gói
+dist/
+.DS_Store
+build/
+scripts/dmg/bg*.png
