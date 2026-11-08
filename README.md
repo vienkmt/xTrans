@@ -22,8 +22,9 @@
 - **Hiểu ngữ cảnh cuộc trao đổi** — các lượt gần nhất được gửi kèm để AI giữ nhất quán xưng hô, tên hàng, mã sản phẩm, giá… Thêm *ghi chú bối cảnh* (vd: "đang đàm phán với nhà cung cấp ở Thâm Quyến"). Bấm ↺ để bắt đầu cuộc trao đổi mới.
 - **Gọi thẳng OpenAI** — nhiều tài khoản / API key, chọn model, nhiệt độ, system prompt riêng cho từng hội thoại.
 - **Thao tác nhanh** — ⌘V khi ô soạn trống là dán & dịch ngay; nút *Dán & dịch*. Bản dịch **tự vào clipboard**, sang app chat chỉ cần ⌘V.
-- **Copy là dịch (WeChat)** — bôi đen rồi ⌘C trong WeChat, xTrans tự dịch và hiện bản dịch mà không giành focus. Copy câu trả lời tiếng Việt thì bản dịch tự vào clipboard. Chọn thêm app khác trong Cài đặt; mật khẩu luôn bị bỏ qua.
-- **Khung dịch nhanh trên menu bar** — icon luôn ở góc phải; bấm để mở khung chat gọn ở góc màn hình, vẫn nổi khi bạn chuyển sang app khác để copy qua lại.
+- **Copy là dịch (WeChat)** — bôi đen rồi ⌘C trong WeChat, xTrans tự nhận diện ngôn ngữ, chuyển sang hội thoại phù hợp và dịch mà không giành focus. Ngôn ngữ chưa có cặp (vd tiếng Đức) được dịch trong hội thoại đang mở. Copy câu trả lời tiếng Việt thì bản dịch tự vào clipboard. Chọn thêm app khác trong Cài đặt; mật khẩu luôn bị bỏ qua.
+- **Khung dịch nhanh trên menu bar** — icon luôn ở góc phải; bấm để mở khung chat gọn ở góc màn hình, vẫn nổi khi bạn chuyển sang app khác để copy qua lại. Kéo cạnh trái / cạnh dưới để đổi kích thước (được nhớ lại). Chỉ một trong hai — khung dịch nhanh hoặc cửa sổ lớn — hiện tại một thời điểm.
+- **Avatar theo hãng AI** — bản dịch hiện logo OpenAI, Claude, Gemini hoặc Grok theo model đã dùng.
 - **Đóng cửa sổ không thoát app** — xTrans ẩn vào menu bar, mở lại bất cứ lúc nào.
 - Giao diện co giãn theo cửa sổ, chế độ sáng / tối, 3 kiểu hình nền.
 

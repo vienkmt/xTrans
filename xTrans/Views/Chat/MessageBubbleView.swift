@@ -55,7 +55,7 @@ struct MessageBubbleView: View {
             if !message.isOutgoing {
                 // Avatar chỉ ở tin cuối của nhóm; các tin trước chừa chỗ để thẳng hàng
                 if isLastInGroup {
-                    AIAvatarView()
+                    AIAvatarView(model: message.model)
                         .help("Dịch bởi \(senderName)")
                 } else {
                     Color.clear.frame(width: dense ? AIAvatarView.denseSize : AIAvatarView.size, height: 1)
@@ -209,26 +209,66 @@ private struct SelectableText: ViewModifier {
 }
 
 /// Avatar tròn của AI — đặt cạnh bản dịch như avatar người gửi trong Telegram.
+/// Model của OpenAI / Claude / Gemini / Grok → logo hãng; model khác → avatar ✨ mặc định.
 struct AIAvatarView: View {
     static let size: CGFloat = 32
     static let denseSize: CGFloat = 24
+    var model: String?
     @Environment(\.denseLayout) private var dense
 
     var body: some View {
         let size = dense ? Self.denseSize : Self.size
+        let provider = AIProvider(model: model)
         return Circle()
-            .fill(
-                LinearGradient(
-                    colors: [Color(hex: 0x7DB8F0), XTheme.accent],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                )
-            )
+            .fill(LinearGradient(colors: background(provider), startPoint: .topLeading, endPoint: .bottomTrailing))
             .frame(width: size, height: size)
-            .overlay(
-                Image(systemName: "sparkles")
-                    .font(.system(size: size * 0.44, weight: .semibold))
-                    .foregroundStyle(.white)
-            )
+            .overlay {
+                if let provider {
+                    Image(provider.logoAsset)
+                        .renderingMode(.template)
+                        .resizable()
+                        .scaledToFit()
+                        .foregroundStyle(.white)
+                        .frame(width: size * logoScale(provider), height: size * logoScale(provider))
+                } else {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: size * 0.44, weight: .semibold))
+                        .foregroundStyle(.white)
+                }
+            }
             .shadow(color: .black.opacity(0.08), radius: 1, y: 1)
     }
+
+    /// Màu nền theo nhận diện thương hiệu của từng hãng.
+    private func background(_ provider: AIProvider?) -> [Color] {
+        switch provider {
+        case .openAI: [Color(hex: 0x2B2B2B), Color(hex: 0x000000)]
+        case .claude: [Color(hex: 0xE08A6A), Color(hex: 0xC96442)]
+        case .gemini: [Color(hex: 0x4F8DF7), Color(hex: 0x9B72CB), Color(hex: 0xD96570)]
+        case .grok: [Color(hex: 0x3A3A3A), Color(hex: 0x111111)]
+        case nil: [Color(hex: 0x7DB8F0), XTheme.accent]
+        }
+    }
+
+    /// Logo chiếm bao nhiêu phần đường kính (mỗi logo có độ "đặc" khác nhau).
+    private func logoScale(_ provider: AIProvider) -> CGFloat {
+        switch provider {
+        case .openAI, .claude: 0.58
+        case .gemini: 0.54
+        case .grok: 0.56
+        }
+    }
+}
+
+#Preview("Avatar AI") {
+    HStack(spacing: 12) {
+        ForEach(["gpt-4.1-mini", "claude-sonnet-4-5", "gemini-2.5-pro", "grok-4", "deepseek-chat"], id: \.self) { model in
+            VStack(spacing: 6) {
+                AIAvatarView(model: model)
+                AIAvatarView(model: model).environment(\.denseLayout, true)
+                Text(model).font(.caption2)
+            }
+        }
+    }
+    .padding()
 }

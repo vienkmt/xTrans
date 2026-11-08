@@ -34,6 +34,41 @@ struct AIAccount: Identifiable, Hashable {
     }
 }
 
+/// Nhà cung cấp model — đoán từ tên model để hiện đúng logo cạnh bản dịch.
+enum AIProvider {
+    case openAI, claude, gemini, grok
+
+    /// "gpt-4.1-mini", "o4-mini", "claude-sonnet-4", "openai/gpt-4o" (OpenRouter)… → nil nếu không nhận ra.
+    init?(model: String?) {
+        guard let m = model?.lowercased(), !m.isEmpty else { return nil }
+        if m.contains("claude") || m.contains("anthropic") { self = .claude }
+        else if m.contains("gemini") { self = .gemini }
+        else if m.contains("grok") || m.contains("x-ai/") { self = .grok }
+        else if m.contains("gpt") || m.contains("openai") || m.range(of: #"^o\d"#, options: .regularExpression) != nil {
+            self = .openAI
+        } else { return nil }
+    }
+
+    var name: String {
+        switch self {
+        case .openAI: "OpenAI"
+        case .claude: "Claude"
+        case .gemini: "Gemini"
+        case .grok: "Grok"
+        }
+    }
+
+    /// Tên ảnh vector (template) trong Assets.
+    var logoAsset: String {
+        switch self {
+        case .openAI: "LogoOpenAI"
+        case .claude: "LogoClaude"
+        case .gemini: "LogoGemini"
+        case .grok: "LogoGrok"
+        }
+    }
+}
+
 /// Cấu hình AI riêng cho từng hội thoại.
 struct AIConfig: Hashable {
     /// nil = dùng tài khoản mặc định trong Settings.

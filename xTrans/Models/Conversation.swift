@@ -119,10 +119,20 @@ extension Language {
     }
 
     /// Đoán đoạn văn thuộc ngôn ngữ nào trong `candidates` (vd: cặp nguồn/đích).
+    /// Trả về nil nếu không đoán được, hoặc chắc chắn là ngôn ngữ ngoài `candidates` (vd tiếng Đức khi chỉ có EN/ZH/VI).
     static func detect(_ text: String, among candidates: [Language]) -> Language? {
         // 1) Ngôn ngữ có bảng chữ riêng: chỉ cần thấy chữ đó là đủ (kể cả câu lẫn Latin, mã hàng…)
         if let byScript = detectByScript(text, among: candidates) { return byScript }
-        // 2) Ngôn ngữ dùng chữ Latin: nhờ NaturalLanguage phân biệt
+        // 2) Đoán tự do trước: nếu không giới hạn, NaturalLanguage buộc phải chọn một ứng viên
+        //    → tiếng Đức, Tây Ban Nha… từng bị nhận nhầm thành tiếng Việt.
+        let free = NLLanguageRecognizer()
+        free.processString(text)
+        if let found = free.dominantLanguage {
+            if let match = candidates.first(where: { $0.nlLanguages.contains(found) }) { return match }
+            let confidence = free.languageHypotheses(withMaximum: 1)[found] ?? 0
+            if confidence >= 0.6 { return nil } // khá chắc là ngôn ngữ khác
+        }
+        // 3) Không chắc (câu ngắn, lẫn mã hàng…) → chọn trong các ứng viên
         let recognizer = NLLanguageRecognizer()
         recognizer.languageConstraints = candidates.flatMap(\.nlLanguages)
         recognizer.processString(text)

@@ -252,7 +252,7 @@ struct GeneralSettingsView: View {
                     get: { settings.launchAtLogin },
                     set: { settings.setLaunchAtLogin($0) }
                 ))
-                Toggle("Khi mở app: ẩn sẵn trên menu bar", isOn: $settings.startInMenuBar)
+                Toggle("Khi mở app: chỉ mở khung dịch nhanh (không mở cửa sổ lớn)", isOn: $settings.startInMenuBar)
                 if let error = settings.launchAtLoginError {
                     Text(error)
                         .font(.caption)

@@ -233,10 +233,6 @@ struct SidebarView: View {
                         MenuBarController.shared.closePopover()
                         MenuBarController.shared.showMainWindow()
                     }
-                    compactButton("gearshape", help: "Cài đặt (⌘,)") {
-                        MenuBarController.shared.closePopover()
-                        MenuBarController.shared.openSettings()
-                    }
                     compactButton("power", help: "Thoát xTrans") {
                         NSApp.terminate(nil)
                     }

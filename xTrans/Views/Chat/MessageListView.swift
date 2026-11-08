@@ -5,6 +5,8 @@ struct MessageListView: View {
     let sourceLanguage: Language
     let targetLanguage: Language
     let isTranslating: Bool
+    /// Model đang dịch — để avatar "đang gõ" hiện đúng logo hãng.
+    var model: String?
     var onRetry: (Message.ID) -> Void = { _ in }
     @Environment(\.denseLayout) private var dense
 
@@ -46,7 +48,7 @@ struct MessageListView: View {
 
                     if isTranslating {
                         HStack(alignment: .bottom, spacing: dense ? 6 : 8) {
-                            AIAvatarView()
+                            AIAvatarView(model: model)
                             TypingIndicatorView()
                         }
                             .frame(maxWidth: .infinity, alignment: .leading)

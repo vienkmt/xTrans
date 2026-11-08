@@ -188,22 +188,30 @@ final class ChatStore {
     }
 
     /// Chữ vừa copy trong app được theo dõi (vd WeChat): chọn hội thoại có ngôn ngữ khớp rồi gửi dịch.
-    /// Ưu tiên hội thoại đang mở. Trả về id hội thoại, hoặc nil nếu không cặp nào khớp.
+    /// Ưu tiên hội thoại đang mở. Ngôn ngữ ngoài các cặp (vd tiếng Đức) → dịch trong hội thoại đang mở,
+    /// sang ngôn ngữ đích của hội thoại đó. Trả về id hội thoại, hoặc nil nếu chưa có hội thoại nào.
     func receiveClipboardText(_ text: String) -> Conversation.ID? {
         let candidates = Array(Set(conversations.flatMap { [$0.sourceLang, $0.targetLang] }))
-        guard let lang = Language.detect(text, among: candidates) else { return nil }
 
         let conv: Conversation?
-        if let current = selectedConversation, current.sourceLang == lang || current.targetLang == lang {
-            conv = current
+        if let lang = Language.detect(text, among: candidates) {
+            conv = conversation(for: lang)
         } else {
-            conv = sortedConversations.first { $0.sourceLang == lang }
-                ?? sortedConversations.first { $0.targetLang == lang }
+            conv = selectedConversation ?? sortedConversations.first
         }
         guard let conv else { return nil }
         select(conv.id)
         send(text: text, in: conv.id, origin: .clipboardWatch)
         return conv.id
+    }
+
+    /// Hội thoại hợp với ngôn ngữ: hội thoại đang mở nếu có ngôn ngữ đó, không thì hội thoại đầu tiên có nó.
+    private func conversation(for lang: Language) -> Conversation? {
+        if let current = selectedConversation, current.sourceLang == lang || current.targetLang == lang {
+            return current
+        }
+        return sortedConversations.first { $0.sourceLang == lang }
+            ?? sortedConversations.first { $0.targetLang == lang }
     }
 
     /// Gửi lại một câu gốc bị lỗi.

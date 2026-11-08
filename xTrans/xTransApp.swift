@@ -57,13 +57,15 @@ struct xTransApp: App {
     }
 }
 
-/// Ghi lại hành động mở cửa sổ của SwiftUI để icon menu bar (AppKit) gọi được.
-private struct OpenWindowRegistrar: View {
+/// Ghi lại hành động mở cửa sổ / mở Cài đặt của SwiftUI để icon menu bar (AppKit) gọi được.
+struct OpenWindowRegistrar: View {
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         Color.clear.onAppear {
             MenuBarController.shared.openMainWindowAction = { openWindow(id: MenuBarController.mainWindowID) }
+            MenuBarController.shared.openSettingsAction = { openSettings() }
         }
     }
 }

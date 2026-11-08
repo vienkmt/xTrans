@@ -22,23 +22,10 @@ struct ChatView: View {
                 sourceLanguage: conversation.sourceLang,
                 targetLanguage: conversation.targetLang,
                 isTranslating: store.isTranslating(conversation.id),
+                model: conversation.aiConfig.model,
                 onRetry: { store.retry(messageID: $0, in: conversation.id) }
             )
             .background(XTheme.wallpaper)
-            .overlay(alignment: .bottom) {
-                if store.autoCopyNotice == conversation.id {
-                    Label("Đã chép bản dịch · ⌘V để dán", systemImage: "checkmark.circle.fill")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Capsule().fill(XTheme.accent))
-                        .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
-                        .padding(.bottom, 10)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
-            .animation(.easeOut(duration: 0.2), value: store.autoCopyNotice)
             .overlay {
                 if conversation.messages.isEmpty && !store.isTranslating(conversation.id) {
                     VStack(spacing: 8) {
@@ -64,6 +51,34 @@ struct ChatView: View {
                 onPasteSend: { store.send(text: $0, in: conversation.id) }
             )
         }
+        // Toast nổi ở khoảng 1/3 chiều cao tính từ đáy: chỉ mờ dần vào/ra, không đẩy bố cục nên không gây giật
+        .overlay {
+            GeometryReader { proxy in
+                ZStack {
+                    if store.autoCopyNotice == conversation.id {
+                        CopiedToast()
+                            .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                    }
+                }
+                .position(x: proxy.size.width / 2, y: proxy.size.height * 2 / 3)
+            }
+            .animation(.easeInOut(duration: 0.25), value: store.autoCopyNotice)
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+private struct CopiedToast: View {
+    var body: some View {
+        Label("Đã chép bản dịch · ⌘V để dán", systemImage: "checkmark.circle.fill")
+            .font(.system(size: 13, weight: .medium))
+            .foregroundStyle(.primary)
+            .symbolRenderingMode(.multicolor)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .background(.regularMaterial, in: Capsule())
+            .overlay(Capsule().strokeBorder(XTheme.border, lineWidth: 0.5))
+            .shadow(color: .black.opacity(0.12), radius: 10, y: 3)
     }
 }
 
